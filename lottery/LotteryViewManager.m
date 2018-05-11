@@ -8,10 +8,28 @@
 
 #import "LotteryViewManager.h"
 
+int randomAngel(int openid)
+{
+    int open1[2] = {0, 180};
+    int open2[2] = {90, 270};
+    int index = rand() % 2; //调用随机函数
+    int result = 0;
+    if(openid == 1)
+    {
+        result = open1[index];
+    }
+    else
+    {
+        result = open2[index];
+    }
+    printf("randomAngel = %i\n", result);
+    return result;
+}
 int outRunAngles[13]  = {0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360};
 int inRunAngles[4]  = {0, 90, 180, 270};
 int error[12] = {3,9,6,1,5,11,8,2,10,4,7,0};
-
+static int const out_time = 30;
+static int const in_time = 60;
 @interface LotteryViewManager()
 {
     dispatch_source_t stopRunTimeOutId;
@@ -77,13 +95,13 @@ int error[12] = {3,9,6,1,5,11,8,2,10,4,7,0};
     timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, quene);
     //NSEC_PER_SEC是秒，＊1是每秒
     uint64_t milsec = NSEC_PER_SEC * interval * 0.001;
-    dispatch_source_set_timer(timer, dispatch_walltime(NULL, 0), milsec, 0);
+    dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, milsec, 0);
     //启动源
     dispatch_resume(timer);
+    NSLog(@"create %p",timer);
+
     return timer;
 }
-
-
 
 - (void)reset
 {
@@ -94,11 +112,11 @@ int error[12] = {3,9,6,1,5,11,8,2,10,4,7,0};
     self.index_out = 0;
     self.OutBo = NO;
     self.runing = NO;
-    self.delayInSide = 60;
-    self.delayOutSide = 30;
-    stopRunTimeOutId = NULL;
-    inSideIntevalId = NULL;
-    outSideIntevalId = NULL;
+    self.delayInSide = in_time;
+    self.delayOutSide = out_time;
+    [self clearTimer:inSideIntevalId];
+    [self clearTimer:outSideIntevalId];
+    [self clearTimer:stopRunTimeOutId];
 }
 
 - (void)startRun
@@ -107,18 +125,7 @@ int error[12] = {3,9,6,1,5,11,8,2,10,4,7,0};
     {
         return;
     }
-    self.delayInSide = 60;
-    self.delayOutSide = 30;
-    self.arrOutId = -1;
-    self.inSideOpenID = -1;
-    self.outSideOpenID = -1;
-    self.index_in = 0;
-    self.index_out = 0;
-    self.OutBo = false;
-    
-    [self clearTimer:inSideIntevalId];
-    [self clearTimer:outSideIntevalId];
-    [self clearTimer:stopRunTimeOutId];
+    [self reset];
     
     inSideIntevalId = [self setTimeInteval:@selector(runInSideFunction) timeInteval:self.delayInSide];
     outSideIntevalId = [self setTimeInteval:@selector(runOutSideFunction) timeInteval:self.delayOutSide];
@@ -127,53 +134,30 @@ int error[12] = {3,9,6,1,5,11,8,2,10,4,7,0};
 
 - (void)stopRun
 {
-    self.runing = false;
-    self.delayInSide = 60;
-    self.delayOutSide = 30;
-    self.arrOutId = -1;
-    self.inSideOpenID = -1;
-    self.outSideOpenID = -1;
-    self.index_out = 0;
-    self.index_in = 0;
-    self.OutBo = false;
-    [self clearTimer:inSideIntevalId];
-    [self clearTimer:outSideIntevalId];
-    [self clearTimer:stopRunTimeOutId];
+    NSLog(@"stopRun");
+    [self reset];
 }
 
 - (void)runInSideFunction
 {
     if (self.inSideOpenID != -1)
     {
-        if (self.delayInSide <= 60 * 13 * 2 + 10)
+        if (self.delayInSide <= 660)
         {
-            self.delayInSide += 60;
-        }
-        NSLog(@"self.delayInSide = %i", self.delayInSide);
-        if (self.delayInSide > 60 * 13 * 2 + 10)
-        {
-            int rotation = self.turntableView.smallRaceLampView.rotation;
-            if (self.inSideOpenID == 1)
-            {
-                if(rotation == 90  || rotation == 270)
-                {
-                    NSLog(@"inSideOpenID  == 1");
-                    [self clearTimer:inSideIntevalId];
-                    return;
-                }
-            }
-            else if (self.inSideOpenID == 2)
-            {
-                if(rotation == 0  || rotation == 180)
-                {
-                    NSLog(@"inSideOpenID  == 2");
-                    [self clearTimer:inSideIntevalId];
-                    return;
-                }
-            }
+            self.delayInSide += 50;
         }
         [self clearTimer:inSideIntevalId];
         inSideIntevalId = [self setTimeInteval:@selector(runInSideFunction) timeInteval:self.delayInSide];
+        if (self.delayInSide >= 660)
+        {
+            if (self.inSideOpenID == 1 || self.inSideOpenID == 2)
+            {
+                if(self.turntableView.smallRaceLampView.rotation == self.random_in)
+                {
+                    [self clearTimer:inSideIntevalId];
+                }
+            }
+        }
     }
     self.index_in++;
     self.turntableView.smallRaceLampView.rotation = inRunAngles[self.index_in%4];
@@ -220,7 +204,11 @@ int error[12] = {3,9,6,1,5,11,8,2,10,4,7,0};
     self.outSideOpenID = self.outSideOpenID - 3;
     self.outSideOpenID = error[self.outSideOpenID];
     self.arrOutId = self.outSideOpenID;
+   
+    self.random_in = randomAngel(inSideId);;
 }
 
 
+
 @end
+

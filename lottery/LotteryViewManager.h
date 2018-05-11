@@ -20,6 +20,7 @@
 @property(nonatomic, assign)BOOL runing;
 @property(nonatomic, assign)int delayInSide;
 @property(nonatomic, assign)int delayOutSide;
+@property(nonatomic, assign)int random_in;
 - (void)stopRun;
 
 - (void)startRun;
