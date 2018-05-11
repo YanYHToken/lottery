@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-
+#import "LotteryViewManager.h"
 @interface ViewController : UIViewController
 
 

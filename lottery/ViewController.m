@@ -7,16 +7,35 @@
 //
 
 #import "ViewController.h"
+#import "LotteryView.h"
 
 @interface ViewController ()
-
+@property(nonatomic, strong)LotteryView *lotteryView;
+@property(nonatomic, strong)LotteryViewManager *lotteryManager;
 @end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
+//    290 × 297
+    self.lotteryView = [[LotteryView alloc] initWithFrame:CGRectMake((self.view.frame.size.width-290)/2, 100, 290, 297)];
+    [self.view addSubview:self.lotteryView];
+    self.lotteryManager = [[LotteryViewManager alloc] init];
+    self.lotteryManager.turntableView = self.lotteryView;
+    [self startRun];
+}
+
+- (void)startRun
+{
+    [self.lotteryManager startRun];
+    [self performSelector:@selector(openLottery) withObject:nil afterDelay:5];
+}
+
+- (void)openLottery
+{
+    [self.lotteryManager delaySetIndex:2 outSideId:5];
+    [self performSelector:@selector(startRun) withObject:nil afterDelay:7];
 }
 
 
